@@ -1,0 +1,128 @@
+<?php
+
+use yii\helpers\Html;
+use yii\grid\GridView;
+use common\models\VesselType;
+use common\models\Vessel;
+use common\models\Ports;
+use common\models\Debtor;
+use common\models\Terminal;
+use common\models\Stages;
+use yii\helpers\ArrayHelper;
+
+/* @var $this yii\web\View */
+/* @var $searchModel common\models\AppointmentSearch */
+/* @var $dataProvider yii\data\ActiveDataProvider */
+
+$this->title = 'Petty Cash';
+$this->params['breadcrumbs'][] = $this->title;
+?>
+<div class="appointment-index">
+
+    <div class="row">
+        <div class="col-md-12">
+
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><?= Html::encode($this->title) ?></h3>
+
+                </div>
+                <div class="panel-body">
+                    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
+
+                    <?php // Html::a('<i class="fa-th-list"></i><span> Create Appointment</span>', ['create'], ['class' => 'btn btn-warning  btn-icon btn-icon-standalone']) ?>
+                    <button class="btn btn-white" id="search-option" style="float: right;">
+                        <i class="linecons-search"></i>
+                        <span>Search</span>
+                    </button>
+                    <?=
+                    GridView::widget([
+                        'dataProvider' => $dataProvider,
+                        'filterModel' => $searchModel,
+                        'columns' => [
+                            ['class' => 'yii\grid\SerialColumn'],
+                            //  'id',
+                            [
+                                'attribute' => 'vessel_type',
+                                'value' => function($data) {
+                                    return VesselType::findOne($data->vessel_type)->vessel_type;
+                                },
+                                'filter' => ArrayHelper::map(VesselType::find()->asArray()->all(), 'id', 'vessel_type'),
+                            ],
+                            [
+                                'attribute' => 'vessel',
+                                'value' => function($data) {
+                                    if ($data->vessel_type == 1) {
+                                        if (isset($data->tug) && isset($data->barge)) {
+                                            return 'T -' . Vessel::findOne($data->tug)->vessel_name . ' / B -' . Vessel::findOne($data->barge)->vessel_name;
+                                        }
+                                    } else {
+                                        if (isset($data->vessel)) {
+                                            return Vessel::findOne($data->vessel)->vessel_name;
+                                        }
+                                    }
+                                },
+                                'filter' => ArrayHelper::map(Vessel::find()->asArray()->all(), 'id', 'vessel_name'),
+                            ],
+                            [
+                                'attribute' => 'port_of_call',
+                                'value' => function($data) {
+                                    if (isset($data->port_of_call)) {
+                                        return Ports::findOne($data->port_of_call)->port_name;
+                                    }
+                                },
+                                'filter' => ArrayHelper::map(Ports::find()->asArray()->all(), 'id', 'port_name'),
+                            ],
+                            'eta',
+                            'appointment_no',
+                            [
+                                'attribute' => 'principal',
+                                'value' => function($data) {
+                                    return Debtor::findOne($data->principal)->principal_id;
+                                },
+                                'filter' => ArrayHelper::map(Debtor::find()->asArray()->all(), 'id', 'principal_id'),
+                            ],
+                            [
+                                'class' => 'yii\grid\ActionColumn',
+                                'contentOptions' => ['style' => 'width:100px;'],
+                                'header' => '',
+                                'template' => '{funding}',
+                                'buttons' => [
+                                    //view button
+                                    'funding' => function ($url) {
+                                        return Html::a('<span class="fa fa-credit-card"></span>', $url, ['title' => Yii::t('app', 'Update Petty Cash Book')]);
+                                    },
+                                ],
+                                'urlCreator' => function ($action, $model, $key, $index) {
+                                    if ($action === 'funding') {
+                                        $url = \yii\helpers\Url::toRoute(['/funding/petty-cash-book/add', 'id' => $key]);
+                                        return $url;
+                                    }
+                                }
+                            ],
+                        ],
+                    ]);
+                    ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .form-control1 {
+        width: 20% !important;
+        padding: 5px;
+    }
+    .btn{
+        margin-top: 11px !important;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+        $(".filters").slideToggle();
+        $("#search-option").click(function () {
+            $(".filters").slideToggle();
+        });
+    });
+</script>
+
